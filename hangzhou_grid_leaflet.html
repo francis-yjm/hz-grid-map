@@ -36,7 +36,7 @@
   .city-tab:hover { color: #ccc; background: #1e2130; }
   .city-tab.active { background: #2e3a5e; color: #5b8dee; font-weight: 600; }
 
-  .main { display: flex; height: calc(100vh - 58px); }
+  .main { display: flex; height: calc(100vh - 58px); position: relative; }
 
   .sidebar {
     width: 240px; min-width: 240px; background: #13151f;
@@ -108,7 +108,17 @@
     z-index: 1000;
   }
   #detail-panel.open { width: 260px; }
-  .detail-inner { width: 260px; padding: 18px 14px; }
+  .detail-inner {
+    width: 260px; padding: 18px 14px;
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: #2a2d3e transparent;
+  }
+  .detail-inner::-webkit-scrollbar { width: 4px; }
+  .detail-inner::-webkit-scrollbar-track { background: transparent; }
+  .detail-inner::-webkit-scrollbar-thumb { background: #2a2d3e; border-radius: 2px; }
   .detail-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
   .detail-sub { font-size: 12px; color: #666; margin-bottom: 14px; }
   .score-ring-wrap { display: flex; justify-content: center; margin-bottom: 14px; }
@@ -188,13 +198,11 @@
     background: rgba(255,204,0,0.1); border: 1px solid rgba(255,204,0,0.2);
     border-radius: 4px; padding: 1px 5px; margin-top: 3px;
   }
-  .store-show-more {
-    text-align: center; font-size: 11px; color: #5b8dee;
-    cursor: pointer; padding: 6px; border-radius: 6px;
-    border: 1px dashed #2a3a5e; margin-top: 2px;
-    transition: background .15s;
+  .store-list-wrap { /* 无高度限制，由 detail-inner 整体滚动 */ }
+  .store-scroll-hint {
+    font-size: 10px; color: #444; margin-top: 6px;
+    text-align: center; letter-spacing: .3px;
   }
-  .store-show-more:hover { background: #1e2a40; }
 
 </style>
 </head>
@@ -1035,30 +1043,29 @@ function buildStoreList(cell) {
   section.innerHTML = '<div class="store-list-title">📍 门店列表 <span class="store-count-badge">' + stores.length + ' 家</span></div>';
 
   var listWrap = document.createElement('div');
+  listWrap.className = 'store-list-wrap';
 
-  function renderItems(limit) {
-    listWrap.innerHTML = '';
-    stores.slice(0, limit).forEach(function(s) {
-      var item = document.createElement('div');
-      item.className = 'store-item';
-      var html = '<div class="store-item-name">' + s.name + '</div>';
-      if (s.branch) html += '<div class="store-item-branch">' + s.branch + '</div>';
-      if (s.phone) html += '<div class="store-item-phone">📞 ' + s.phone + '</div>';
-      if (s.score > 0) html += '<div class="store-item-score">⭐ ' + s.score.toFixed(1) + '</div>';
-      item.innerHTML = html;
-      listWrap.appendChild(item);
-    });
-    if (limit < stores.length) {
-      var more = document.createElement('div');
-      more.className = 'store-show-more';
-      more.textContent = '展开全部 ' + stores.length + ' 家门店 ▾';
-      more.addEventListener('click', function() { renderItems(stores.length); });
-      listWrap.appendChild(more);
-    }
+  stores.forEach(function(s) {
+    var item = document.createElement('div');
+    item.className = 'store-item';
+    var html = '<div class="store-item-name">' + s.name + '</div>';
+    if (s.branch) html += '<div class="store-item-branch">' + s.branch + '</div>';
+    if (s.phone) html += '<div class="store-item-phone">📞 ' + s.phone + '</div>';
+    if (s.score > 0) html += '<div class="store-item-score">⭐ ' + s.score.toFixed(1) + '</div>';
+    item.innerHTML = html;
+    listWrap.appendChild(item);
+  });
+
+  section.appendChild(listWrap);
+
+  // 超过5家时显示滚动提示
+  if (stores.length > 5) {
+    var hint = document.createElement('div');
+    hint.className = 'store-scroll-hint';
+    hint.textContent = '↕ 上下滑动查看全部 ' + stores.length + ' 家';
+    section.appendChild(hint);
   }
 
-  renderItems(5);
-  section.appendChild(listWrap);
   document.querySelector('.detail-inner').appendChild(section);
 }
 
